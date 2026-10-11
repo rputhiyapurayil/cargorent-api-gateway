@@ -1,0 +1,76 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: cargorent-api-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          # Fixed service URLs (no Eureka; service discovery is future scope).
+          # StripPrefix=1 turns /api/vehicles/5 into /vehicles/5 for the service.
+          routes:
+            - id: user-service
+              uri: ${USER_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/api/auth/**,/api/users/**
+              filters:
+                - StripPrefix=1
+            - id: vehicle-service
+              uri: ${VEHICLE_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/vehicles/**,/api/vehicles
+              filters:
+                - StripPrefix=1
+            - id: booking-service
+              uri: ${BOOKING_SERVICE_URL:http://localhost:8083}
+              predicates:
+                - Path=/api/bookings/**,/api/bookings,/api/reports/**
+              filters:
+                - StripPrefix=1
+            - id: payment-service
+              uri: ${PAYMENT_SERVICE_URL:http://localhost:8084}
+              predicates:
+                - Path=/api/payments/**,/api/payments
+              filters:
+                - StripPrefix=1
+            - id: notification-service
+              uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8085}
+              predicates:
+                - Path=/api/notifications/**,/api/notifications
+              filters:
+                - StripPrefix=1
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOrigins:
+                  - ${FRONTEND_ORIGIN:http://localhost:5173}
+                  - http://localhost:3000
+                allowedMethods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+                allowedHeaders: ["*"]
+                maxAge: 3600
+
+cargorent:
+  security:
+    jwt-secret: ${JWT_SECRET:cargorent-dev-secret-change-me-please-32chars-min}
+    public-routes:
+      - POST /api/auth/login
+      - POST /api/auth/register
+      - GET /api/vehicles
+      - GET /api/vehicles/meta
+      - GET /api/vehicles/{id:\d+}
+      - GET /api/vehicles/{id:\d+}/availability
+      - GET /api/bookings/quote
+    internal-routes:
+      - PATCH /api/bookings/*/status
+      - GET /api/bookings/booked-vehicle-ids
+      - GET /api/bookings/upcoming
+      - GET /api/bookings/user/**
+      - POST /api/notifications
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,gateway
