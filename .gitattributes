@@ -1,0 +1,4 @@
+# Keep LF line endings on Windows checkouts (shell scripts, Docker files, SQL)
+* text=auto eol=lf
+*.png binary
+*.jpg binary
